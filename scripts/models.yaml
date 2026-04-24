@@ -1,0 +1,147 @@
+# =============================================================================
+# models.yaml — Manifest of all models required by the generation worker.
+#
+# Usage:
+#   python scripts/download_all_models.py                         # all models
+#   python scripts/download_all_models.py --workflow flux2_reactor
+#   python scripts/download_all_models.py --workflow wan22_i2v
+#   python scripts/download_all_models.py --init-dirs-only        # just dirs
+#
+# Fill in any empty `url` fields before running.
+# Tokens can be set via env: HF_TOKEN (or HUGGING_FACE_HUB_TOKEN), CIVITAI_TOKEN.
+# =============================================================================
+
+volume_root: /runpod-volume                 # override with RUNPOD_VOLUME_DIR env
+
+# ---------------------------------------------------------------------------
+# Directories to create on the volume before downloading.
+# Relative to volume_root.
+# ---------------------------------------------------------------------------
+directories:
+  - models/diffusion_models
+  - models/text_encoders
+  - models/vae
+  - models/insightface
+  - models/loras
+  - models/checkpoints
+  - models/custom
+  - storage/inputs
+  - storage/images
+  - storage/videos
+  - storage/previews
+  - storage/metadata
+  - tmp/generation
+
+# ---------------------------------------------------------------------------
+# Model definitions.
+#
+# Fields:
+#   id          — unique key (for logging / --skip)
+#   filename    — exact name that model_paths.py expects on disk
+#   dest        — destination subdirectory relative to volume_root
+#   url         — download URL (HuggingFace, Civitai, direct)
+#   auth        — optional: "hf_token" | "civitai_token"
+#   workflows   — list of workflows that require this file
+#   notes       — human-readable notes (optional)
+# ---------------------------------------------------------------------------
+models:
+
+  # =========================================================================
+  # workflow: flux2_reactor
+  # =========================================================================
+
+  - id: flux2_diffusion
+    filename: flux2_dev_fp8mixed.safetensors
+    dest: models/diffusion_models
+    # FLUX.1-dev fp8 repackaged by Comfy-Org (no gating, HF token recommended).
+    url: https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors
+    auth: hf_token
+    workflows:
+      - flux2_reactor
+    notes: >
+      FLUX.1-dev FP8 mixed precision, repackaged by Comfy-Org.
+      If the URL changes, also check: kijai/flux-fp8 or black-forest-labs/FLUX.1-dev (gated).
+
+  - id: flux2_text_encoder
+    filename: mistral_3_small_flux2_bf16.safetensors
+    dest: models/text_encoders
+    # TODO: replace with the actual URL for your text encoder.
+    # Standard FLUX text encoders (alternatives if you use a different workflow):
+    #   t5xxl fp8:  https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors
+    #   t5xxl bf16: https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors
+    #   clip_l:     https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors
+    url: ""
+    workflows:
+      - flux2_reactor
+    notes: >
+      Set `url` to the exact file you have. If using standard FLUX text encoders
+      instead of a Mistral-based one, adapt filename and model_paths.py accordingly.
+
+  - id: flux2_vae
+    filename: flux2-vae.safetensors
+    dest: models/vae
+    # FLUX VAE (ae.safetensors) hosted by the Comfy community — no token required.
+    url: https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/ae.safetensors
+    workflows:
+      - flux2_reactor
+    notes: Same VAE as black-forest-labs/FLUX.1-dev, redistributed without gating.
+
+  - id: insightface_buffalo_l
+    filename: buffalo_l.zip
+    dest: models/insightface
+    # Official InsightFace release on GitHub — no auth required.
+    url: https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip
+    workflows:
+      - flux2_reactor
+    notes: Buffalo_L face analysis model from deepinsight/insightface v0.7 release.
+
+  - id: inswapper_128
+    filename: inswapper_128.onnx
+    dest: models/insightface
+    # TODO: set URL to inswapper_128.onnx from a source you have rights to use.
+    # The model was originally at: https://huggingface.co/deepinsight/inswapper
+    # but has been removed. Obtain it from a source compliant with your terms of use.
+    url: ""
+    workflows:
+      - flux2_reactor
+    notes: >
+      Face-swap ONNX model. Obtain from a source you have the rights to use
+      and set the `url` field before running.
+
+  # =========================================================================
+  # workflow: wan22_i2v
+  # =========================================================================
+
+  - id: wan22_diffusion
+    filename: wan2.2_ti2v_5B_fp16.safetensors
+    dest: models/diffusion_models
+    # Wan 2.2 TI2V 5B FP16 repackaged for ComfyUI.
+    # Primary source: Wan-AI/Wan2.2-TI2V-5B on HuggingFace (check repo for exact path).
+    # Community fp16 conversion often on kijai/WanVideo-fp8 or Comfy-Org/Wan_2.2_ComfyUI_repackaged.
+    url: https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B/resolve/main/diffusion_pytorch_model.safetensors
+    auth: hf_token
+    workflows:
+      - wan22_i2v
+    notes: >
+      Verify the exact file path in the Wan-AI/Wan2.2-TI2V-5B repo on HuggingFace.
+      There may be a dedicated ComfyUI-repackaged single-file version from Comfy-Org.
+
+  - id: wan22_vae
+    filename: wan2.2_vae.safetensors
+    dest: models/vae
+    # Wan 2.2 VAE — same VAE shared across Wan 2.x models.
+    url: https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors
+    workflows:
+      - wan22_i2v
+    notes: >
+      Wan 2.1 and 2.2 share the same VAE. Check Comfy-Org/Wan_2.2_ComfyUI_repackaged
+      if a 2.2-specific release is available.
+
+  - id: wan22_text_encoder
+    filename: umt5_xxl_fp8_e4m3fn_scaled.safetensors
+    dest: models/text_encoders
+    # UMT5-XXL text encoder in FP8, repackaged by Comfy-Org for Wan workflows.
+    url: https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors
+    workflows:
+      - wan22_i2v
+    notes: UMT5-XXL FP8 scaled, same file for Wan 2.1 and 2.2.

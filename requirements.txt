@@ -1,0 +1,5 @@
+runpod
+pydantic>=2
+pillow
+opencv-python-headless
+numpy
