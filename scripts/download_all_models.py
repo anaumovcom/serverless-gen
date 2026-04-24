@@ -12,7 +12,7 @@ Usage
     python scripts/download_all_models.py --workflow wan22_i2v
 
     # Create directory structure only (no downloads)
-    python scripts/download_all_models.py --init-dirs-only
+    python scripts/download_all_models.py --init-dirs
 
     # Override volume root (default from models.yaml or RUNPOD_VOLUME_DIR env)
     python scripts/download_all_models.py --volume-root /mnt/my-volume
@@ -241,9 +241,9 @@ def main(argv: Optional[list[str]] = None) -> int:
         help="Print what would be done without making any network requests.",
     )
     parser.add_argument(
-        "--init-dirs-only",
+        "--init-dirs",
         action="store_true",
-        help="Create the directory structure on the volume and exit.",
+        help="Create the directory structure on the volume and exit (no downloads).",
     )
     parser.add_argument(
         "--hf-token",
@@ -281,8 +281,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     # Always create directories (unless dry-run skips the fs ops).
     _create_dirs(volume_root, dirs, dry_run=args.dry_run)
 
-    if args.init_dirs_only:
-        print("\nDone (init-dirs-only).")
+    if args.init_dirs:
+        print("\nDone (init-dirs).")
         return 0
 
     skip_ids = set(args.skip)
